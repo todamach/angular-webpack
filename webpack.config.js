@@ -1,6 +1,8 @@
 // Helper: root() is defined at the bottom
 var path = require('path');
 var webpack = require('webpack');
+var gulp = require("gulp");
+var sfConfig = require('./config');
 
 // Webpack Plugins
 var CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
@@ -15,8 +17,40 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
  */
 var ENV = process.env.npm_lifecycle_event;
 var isTestWatch = ENV === 'test-watch';
-var isTest = ENV === 'test' || isTestWatch;
+var isTest = ENV === 'server' || isTestWatch;
 var isProd = ENV === 'build';
+
+console.log(ENV);
+console.log(isTest);
+console.log(isProd);
+
+var	node_modules_directory;
+var	app_directory;
+var	baseUrl;
+var	local;
+var	controller;
+var	auth;
+
+if(isProd)
+{
+	node_modules_directory = `{!URLFOR($Resource.${sfConfig.resources.node_module_resource_name})}/`;
+	app_directory = `{!URLFOR($Resource.${sfConfig.resources.app_resource_name})}/`;
+	baseUrl = '/apex/' + sfConfig.visualforce.page;
+	local = false;
+	controller = sfConfig.visualforce.controller;
+} else {
+	node_modules_directory = "/node_modules/";
+	app_directory = "/";
+	baseUrl = '/';
+	local = true;
+
+	auth = JSON.stringify({
+		username:    sfConfig.deploy.username,
+		password:    sfConfig.deploy.password,
+		login_url:   sfConfig.deploy.login_url,
+		api_version: sfConfig.deploy.api_version
+	});
+}
 
 module.exports = function makeWebpackConfig() {
   /**
@@ -60,8 +94,8 @@ module.exports = function makeWebpackConfig() {
   config.output = isTest ? {} : {
     path: root('dist'),
     publicPath: isProd ? '/' : 'http://localhost:8080/',
-    filename: isProd ? 'js/[name].[hash].js' : 'js/[name].js',
-    chunkFilename: isProd ? '[id].[hash].chunk.js' : '[id].chunk.js'
+    filename: 'js/[name].js',
+    chunkFilename: '[id].chunk.js'
   };
 
   /**
@@ -97,7 +131,7 @@ module.exports = function makeWebpackConfig() {
       // copy those assets to output
       {
         test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: 'file-loader?name=fonts/[name].[hash].[ext]?'
+        loader: 'file-loader?name=fonts/[name].[ext]?'
       },
 
       // Support for *.json files.
@@ -217,17 +251,20 @@ module.exports = function makeWebpackConfig() {
 
       // Inject script and link tags into html files
       // Reference: https://github.com/ampedandwired/html-webpack-plugin
+
       new HtmlWebpackPlugin({
         template: './src/public/index.html',
-        chunksSortMode: 'dependency'
+		inject: false
       }),
 
       // Extract css files
       // Reference: https://github.com/webpack/extract-text-webpack-plugin
       // Disabled when in test mode or not in build mode
-      new ExtractTextPlugin({filename: 'css/[name].[hash].css', disable: !isProd})
+      new ExtractTextPlugin({filename: 'css/[name].css', disable: !isProd})
     );
   }
+  
+  
 
   // Add build specific plugins
   if (isProd) {
@@ -251,6 +288,8 @@ module.exports = function makeWebpackConfig() {
       }])
     );
   }
+  
+  
 
   /**
    * Dev server configuration

@@ -1,13 +1,35 @@
-<!doctype html>
+<% if (!htmlWebpackPlugin.options.local) { %>
+<apex:page controller="<%= htmlWebpackPlugin.options.controller %>" showHeader="false" standardStylesheets="false" sidebar="false" applyHtmlTag="false" applyBodyTag="false" docType="html-5.0">
+<% } %>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Angular 2 App | ng2-webpack</title>
-    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
-
-    <base href="/">
-  </head>
-  <body>
-    <my-app>Loading...</my-app>
-  </body>
+	<head>
+		<base href="<%= htmlWebpackPlugin.options.baseUrl %>"/>
+		<meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Angular 2 Salesforce Test</title>
+		<script type="text/javascript"> if(!window._sf) window._sf = {} </script>
+		<% if (htmlWebpackPlugin.options.local) { %>
+			<script type="text/javascript">
+				window.local = true;
+				window._sf.auth = <%= htmlWebpackPlugin.options.auth %>
+			</script>
+		<% } else { %>
+			<script type="text/javascript">
+				window._sf.api = "{!JSENCODE($Api.Session_ID)}";
+				window._sf.node_modules_dir= "<%= htmlWebpackPlugin.options.node_modules_directory %>";
+				window._sf.app_dir = "<%= htmlWebpackPlugin.options.app_directory %>";
+			</script>
+		<% } %>
+	</head>
+	
+	<body>
+		<my-app>Loading...</my-app>
+		
+		<script src="{!URLFOR($Resource.AngularApp)}/js/polyfills.js"></script>
+		<script src="{!URLFOR($Resource.AngularApp)}/js/vendor.js"></script>
+		<script src="{!URLFOR($Resource.AngularApp)}/js/app.js"></script>
+	</body>
 </html>
+<% if (!htmlWebpackPlugin.options.local) { %>
+</apex:page>
+<% } %>
